@@ -32,7 +32,7 @@ import (
 
 const MAXPATHLEN = 4096
 const RANDOFFS = 64
-const MAXLEN = 128
+const MAXLEN = 1024
 
 type CuckooSolve struct {
 	graph    *cuckoo.Cuckoo
@@ -63,8 +63,11 @@ func (self *CuckooSolve) path(u int, us []int, done chan int) int {
 	for nu = 0; u != 0; u = self.cuckoo[u] {
 		nu++
 		if nu >= MAXPATHLEN {
-			for nu != 0 && us[nu] != u {
+			for nu != 0 {
 				nu--
+				if us[nu] == u {
+					break
+				}
 			}
 			if nu < 0 {
 				fmt.Println("maximum path length exceeded")
@@ -72,6 +75,7 @@ func (self *CuckooSolve) path(u int, us []int, done chan int) int {
 				fmt.Println("illegal", (MAXPATHLEN - nu), "-cycle")
 			}
 			close(done)
+			return -1
 		}
 		us[nu] = u
 	}
@@ -133,6 +137,11 @@ func worker(id int, solve *CuckooSolve, done chan int) {
 		}
 		nu := solve.path(u, us, done)
 		nv := solve.path(v, vs, done)
+		
+		if nu == -1 || nv == -1 {
+			return
+		}
+		
 		if us[nu] == vs[nv] {
 			min := 0
 			if nu < nv {
