@@ -23,6 +23,7 @@ THE SOFTWARE.
 package main
 
 import (
+	"crypto/rand"
 	"flag"
 	"fmt"
 	"github.com/ZiRo-/cuckgo/cuckoo"
@@ -30,6 +31,8 @@ import (
 )
 
 const MAXPATHLEN = 4096
+const RANDOFFS = 64
+const MAXLEN = 128
 
 type CuckooSolve struct {
 	graph    *cuckoo.Cuckoo
@@ -144,7 +147,7 @@ func worker(id int, solve *CuckooSolve, done chan int) {
 				nv++
 			}
 			length := nu + nv + 1
-			fmt.Println(" " , length , "-cycle found at " , id , ":" , (int)(nonce*100/solve.easiness) , "%")
+			//fmt.Println(" " , length , "-cycle found at " , id , ":" , (int)(nonce*100/solve.easiness) , "%")
 			if uint64(length) == cuckoo.PROOFSIZE && solve.nsols < len(solve.sols) {
 				solve.solution(us, nu, vs, nv)
 			}
@@ -170,20 +173,52 @@ func worker(id int, solve *CuckooSolve, done chan int) {
 var nthreads int
 var maxsols int
 var easipct float64
-var header string
+
+//var header string
 
 func init() {
 	flag.IntVar(&nthreads, "t", 4, "number of miner threads")
 	flag.IntVar(&maxsols, "m", 8, "maximum number of solutions")
 	flag.Float64Var(&easipct, "e", 50.0, "easiness in percentage")
-	flag.StringVar(&header, "h", "cuck", "Header")
+	//flag.StringVar(&header, "h", "cuck", "Header")
 }
 
 func main() {
 	flag.Parse()
-	fmt.Println("Looking for",cuckoo.PROOFSIZE, "-cycle on cuckoo", cuckoo.SIZESHIFT, "(\"", header, "\") with ", easipct,"% edges and", nthreads, "threads")
-	solve := NewCuckooSolve(([]byte(header)), int(easipct * float64(cuckoo.SIZE) / 100.0), maxsols, nthreads)
+	fmt.Println("Looking for", cuckoo.PROOFSIZE, "-cycle on cuckoo", cuckoo.SIZESHIFT, "with", easipct, "% edges and", nthreads, "threads")
 
+	b := make([]byte, RANDOFFS)
+	_, err := rand.Read(b)
+	if err != nil {
+		panic(err)
+	}
+	solve := NewCuckooSolve(b, int(easipct*float64(cuckoo.SIZE)/100.0), maxsols, nthreads)
+
+	for k := 0; k < MAXLEN-RANDOFFS; k++ {
+		b = append(b, 0)
+		for i := 0; i < 256; i++ {
+			b[RANDOFFS+k] = byte(i)
+			solve = NewCuckooSolve(b, int(easipct*float64(cuckoo.SIZE)/100.0), maxsols, nthreads)
+
+			tryData(solve)
+
+			if solve.nsols > 0 {
+				goto done
+			}
+		}
+	}
+
+done:
+	for s := 0; s < solve.nsols; s++ {
+		fmt.Print("Solution")
+		for i := 0; uint64(i) < cuckoo.PROOFSIZE; i++ {
+			fmt.Printf(" %x", solve.sols[s][i])
+		}
+		fmt.Println()
+	}
+}
+
+func tryData(solve *CuckooSolve) {
 	cs := make([]chan int, nthreads)
 	for i := 0; i < nthreads; i++ {
 		cs[i] = make(chan int)
@@ -195,14 +230,6 @@ func main() {
 	}
 
 	<-out
-
-	for s := 0; s < solve.nsols; s++ {
-		fmt.Print("Solution")
-		for i := 0; uint64(i) < cuckoo.PROOFSIZE; i++ {
-			fmt.Printf(" %x", solve.sols[s][i])
-		}
-		fmt.Println()
-	}
 }
 
 func merge(cs ...chan int) chan int {
