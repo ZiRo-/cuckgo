@@ -137,11 +137,11 @@ func worker(id int, solve *CuckooSolve, done chan int) {
 		}
 		nu := solve.path(u, us, done)
 		nv := solve.path(v, vs, done)
-		
+
 		if nu == -1 || nv == -1 {
 			return
 		}
-		
+
 		if us[nu] == vs[nv] {
 			min := 0
 			if nu < nv {

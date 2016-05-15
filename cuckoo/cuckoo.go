@@ -48,8 +48,13 @@ func u8to64(p [sha256.Size]byte, i int) uint64 {
 }
 
 func NewCuckoo(header []byte) *Cuckoo {
-	self := new(Cuckoo)
 	hdrkey := sha256.Sum256(header)
+
+	return NewCuckooSHA(hdrkey)
+}
+
+func NewCuckooSHA(hdrkey [sha256.Size]byte) *Cuckoo {
+	self := new(Cuckoo)
 	k0 := u8to64(hdrkey, 0)
 	k1 := u8to64(hdrkey, 8)
 	self.v[0] = k0 ^ 0x736f6d6570736575
