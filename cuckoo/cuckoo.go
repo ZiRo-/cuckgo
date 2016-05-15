@@ -23,6 +23,7 @@ THE SOFTWARE.
 package cuckoo
 
 import "crypto/sha256"
+import "fmt"
 
 const (
 	SIZESHIFT uint64 = 20
@@ -194,6 +195,7 @@ func (self *Cuckoo) Verify(nonces []uint64, easiness uint64) bool {
 
 	for n = 0; n < PROOFSIZE; n++ {
 		if nonces[n] >= easiness || (n != 0 && nonces[n] <= nonces[n-1]) {
+			fmt.Println(1)
 			return false
 		}
 		us[n] = self.Sipnode(nonces[n], 0)
@@ -206,28 +208,33 @@ func (self *Cuckoo) Verify(nonces []uint64, easiness uint64) bool {
 		for k := 0; uint64(k) < PROOFSIZE; k++ { // find unique other j with same vs[j]
 			if k != i && vs[k] == vs[i] {
 				if j != i {
+					fmt.Println(2)
 					return false
 				}
 				j = k
 			}
 		}
 		if j == i {
+			fmt.Println(3)
 			return false
 		}
 		i = j
 		for k := 0; uint64(k) < PROOFSIZE; k++ { // find unique other i with same us[i]
 			if k != j && us[k] == us[j] {
 				if i != j {
+					fmt.Println(4)
 					return false
 				}
 				i = k
 			}
 		}
 		if i == j {
+			fmt.Println(5)
 			return false
 		}
 		n -= 2
 		loop = (i != 0)
 	}
+	fmt.Println("n", n)
 	return n == 0
 }

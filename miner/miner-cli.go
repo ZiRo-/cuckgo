@@ -55,7 +55,7 @@ func NewCuckooSolve(hdr []byte, en, ms, nt int) *CuckooSolve {
 		nthreads: nt,
 	}
 	for i := range self.sols {
-		self.sols[i] = make([]int, cuckoo.PROOFSIZE+1)
+		self.sols[i] = make([]int, cuckoo.PROOFSIZE)
 	}
 	return self
 }
@@ -104,8 +104,8 @@ func (self *CuckooSolve) solution(us []int, nu int, vs []int, nv int) {
 		e := self.graph.Sipedge(uint64(nonce))
 		has, key := contains(cycle, e)
 		if has {
-			n++
 			self.sols[self.nsols][n] = nonce
+			n++
 			delete(cycle, key)
 		}
 	}
@@ -229,6 +229,7 @@ done:
 	}*/
 	if len(solve.sols) > 0 {
 		c := formatProof(solve, b)
+		//fmt.Println(c)
 		json, _ := cuckoo.EncodeCuckooJSON(c)
 		//fmt.Println(json)
 		str := base64.StdEncoding.EncodeToString(json)
