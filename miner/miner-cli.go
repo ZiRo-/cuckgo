@@ -29,6 +29,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/ZiRo-/cuckgo/cuckoo"
+	"runtime"
 	"sync"
 )
 
@@ -192,7 +193,7 @@ var easipct float64
 //var header string
 
 func init() {
-	flag.IntVar(&nthreads, "t", 4, "number of miner threads")
+	flag.IntVar(&nthreads, "t", 0, "number of miner threads")
 	flag.IntVar(&maxsols, "m", 8, "maximum number of solutions")
 	flag.Float64Var(&easipct, "e", 50.0, "easiness in percentage")
 	//flag.StringVar(&header, "h", "cuck", "Header")
@@ -200,6 +201,9 @@ func init() {
 
 func main() {
 	flag.Parse()
+	if (nthreads < 1) {
+		nthreads = runtime.NumCPU()
+	}
 	//fmt.Println("Looking for", cuckoo.PROOFSIZE, "-cycle on cuckoo", cuckoo.SIZESHIFT, "with", easipct, "% edges and", nthreads, "threads")
 
 	b := make([]byte, RANDOFFS)
