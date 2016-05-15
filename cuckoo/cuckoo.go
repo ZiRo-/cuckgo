@@ -71,7 +71,7 @@ type Edge struct {
 }
 
 func (self *Edge) HashCode() int {
-	return int (self.U) ^ int(self.V)
+	return int(self.U) ^ int(self.V)
 }
 
 func (self *Cuckoo) Sipedge(nonce uint64) *Edge {

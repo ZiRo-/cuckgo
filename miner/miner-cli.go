@@ -65,7 +65,7 @@ func (self *CuckooSolve) path(u int, us []int, done chan int) int {
 	for nu = 0; u != 0; u = self.cuckoo[u] {
 		nu++
 		if nu >= MAXPATHLEN {
-			for nu != 0 && us[nu-1] != u{
+			for nu != 0 && us[nu-1] != u {
 				nu--
 			}
 			if nu < 0 {
@@ -89,7 +89,7 @@ func (self *CuckooSolve) solution(us []int, nu int, vs []int, nv int) {
 	for nu != 0 { // u's in even position; v's in odd
 		nu--
 		edg := &cuckoo.Edge{uint64(us[(nu+1)&^1]), uint64(us[nu|1]) - cuckoo.HALFSIZE}
-		_, has:=cycle[edg.HashCode()]
+		_, has := cycle[edg.HashCode()]
 		if !has {
 			cycle[edg.HashCode()] = edg
 		}
@@ -97,7 +97,7 @@ func (self *CuckooSolve) solution(us []int, nu int, vs []int, nv int) {
 	for nv != 0 { // u's in odd position; v's in even
 		nv--
 		edg := &cuckoo.Edge{uint64(vs[nv|1]), uint64(vs[(nv+1)&^1]) - cuckoo.HALFSIZE}
-		_, has:=cycle[edg.HashCode()]
+		_, has := cycle[edg.HashCode()]
 		if !has {
 			cycle[edg.HashCode()] = edg
 		}
@@ -207,13 +207,13 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	easy := int(easipct*float64(cuckoo.SIZE)/100.0)
+	easy := int(easipct * float64(cuckoo.SIZE) / 100.0)
 	solve := NewCuckooSolve(b, easy, maxsols, 1)
 
 	for k := 0; k < MAXLEN-RANDOFFS; k++ {
 		b = append(b, 0)
-		for i := 0; i < 256; i+=nthreads {
-			
+		for i := 0; i < 256; i += nthreads {
+
 			cs := make([]chan int, nthreads)
 			solvers := make([]*CuckooSolve, nthreads)
 			for n := 0; n < nthreads; n++ {
@@ -223,7 +223,7 @@ func main() {
 
 			for n := 0; n < nthreads; n++ {
 				if i+n < 256 {
-					b[RANDOFFS+k] = byte(i+n)
+					b[RANDOFFS+k] = byte(i + n)
 					solvers[n] = NewCuckooSolve(b, easy, maxsols, 1)
 					go worker(i, solvers[n], cs[n])
 				} else {
@@ -232,10 +232,10 @@ func main() {
 			}
 
 			<-out
-			
-			for n, s := range(solvers) {
+
+			for n, s := range solvers {
 				if s.nsols > 0 {
-					b[RANDOFFS+k] = byte(i+n)
+					b[RANDOFFS+k] = byte(i + n)
 					solve = s
 					goto done
 				}

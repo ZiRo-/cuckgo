@@ -30,10 +30,10 @@ import (
 )
 
 func main() {
-	if len(os.Args)<2 {
+	if len(os.Args) < 2 {
 		os.Exit(3)
 	}
-	
+
 	data, err := base64.StdEncoding.DecodeString(os.Args[1])
 	if err != nil {
 		fmt.Println("error:", err)
@@ -45,7 +45,7 @@ func main() {
 		os.Exit(2)
 	}
 	//fmt.Println(cuck)
-	
+
 	if cuckoo.VerifyJSON(*cuck) {
 		fmt.Println("Valid")
 		os.Exit(0)
@@ -54,4 +54,3 @@ func main() {
 		os.Exit(1)
 	}
 }
-	
