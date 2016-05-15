@@ -186,7 +186,7 @@ func (self *Cuckoo) Sipnode(nonce uint64, uorv uint32) uint64 {
 }
 
 // verify that (ascending) nonces, all less than easiness, form a cycle in graph
-func (self *Cuckoo) verify(nonces []uint64, easiness uint64) bool {
+func (self *Cuckoo) Verify(nonces []uint64, easiness uint64) bool {
 	us := make([]uint64, PROOFSIZE)
 	vs := make([]uint64, PROOFSIZE)
 	i := 0

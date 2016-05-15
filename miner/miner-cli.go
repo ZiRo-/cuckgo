@@ -24,6 +24,8 @@ package main
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
 	"flag"
 	"fmt"
 	"github.com/ZiRo-/cuckgo/cuckoo"
@@ -72,7 +74,7 @@ func (self *CuckooSolve) path(u int, us []int, done chan int) int {
 			if nu < 0 {
 				fmt.Println("maximum path length exceeded")
 			} else {
-				fmt.Println("illegal", (MAXPATHLEN - nu), "-cycle")
+				//fmt.Println("illegal", (MAXPATHLEN - nu), "-cycle")
 			}
 			close(done)
 			return -1
@@ -110,7 +112,7 @@ func (self *CuckooSolve) solution(us []int, nu int, vs []int, nv int) {
 	if uint64(n) == cuckoo.PROOFSIZE {
 		self.nsols++
 	} else {
-		fmt.Println("Only recovered ", n, " nonces")
+		//fmt.Println("Only recovered ", n, " nonces")
 	}
 }
 
@@ -194,7 +196,7 @@ func init() {
 
 func main() {
 	flag.Parse()
-	fmt.Println("Looking for", cuckoo.PROOFSIZE, "-cycle on cuckoo", cuckoo.SIZESHIFT, "with", easipct, "% edges and", nthreads, "threads")
+	//fmt.Println("Looking for", cuckoo.PROOFSIZE, "-cycle on cuckoo", cuckoo.SIZESHIFT, "with", easipct, "% edges and", nthreads, "threads")
 
 	b := make([]byte, RANDOFFS)
 	_, err := rand.Read(b)
@@ -218,13 +220,36 @@ func main() {
 	}
 
 done:
-	for s := 0; s < solve.nsols; s++ {
-		fmt.Print("Solution")
+	/* for s := 0; s < solve.nsols; s++ {
+		//fmt.Print("Solution")
 		for i := 0; uint64(i) < cuckoo.PROOFSIZE; i++ {
 			fmt.Printf(" %x", solve.sols[s][i])
 		}
 		fmt.Println()
+	}*/
+	if len(solve.sols) > 0 {
+		c := formatProof(solve, b)
+		json, _ := cuckoo.EncodeCuckooJSON(c)
+		//fmt.Println(json)
+		str := base64.StdEncoding.EncodeToString(json)
+		fmt.Println(str)
+	} else {
+		fmt.Println("No Solution found.")
 	}
+}
+
+func formatProof(solve *CuckooSolve, b []byte) cuckoo.CuckooJSON {
+	sha := sha256.Sum256(b)
+	easy := uint64(solve.easiness)
+	cycle := make([]uint64, len(solve.sols[0]))
+	m := make(map[string]uint64)
+	m["easiness"] = easy
+
+	for i, n := range solve.sols[0] {
+		cycle[i] = uint64(n)
+	}
+
+	return cuckoo.CuckooJSON{m, sha[:], cycle}
 }
 
 func tryData(solve *CuckooSolve) {
