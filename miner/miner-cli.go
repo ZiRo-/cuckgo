@@ -65,14 +65,11 @@ func (self *CuckooSolve) path(u int, us []int, done chan int) int {
 	for nu = 0; u != 0; u = self.cuckoo[u] {
 		nu++
 		if nu >= MAXPATHLEN {
-			for nu != 0 {
+			for nu != 0 && us[nu-1] != u{
 				nu--
-				if us[nu] == u {
-					break
-				}
 			}
 			if nu < 0 {
-				fmt.Println("maximum path length exceeded")
+				//fmt.Println("maximum path length exceeded")
 			} else {
 				//fmt.Println("illegal", (MAXPATHLEN - nu), "-cycle")
 			}
@@ -85,19 +82,25 @@ func (self *CuckooSolve) path(u int, us []int, done chan int) int {
 }
 
 func (self *CuckooSolve) solution(us []int, nu int, vs []int, nv int) {
-	cycle := make(map[uint64]*cuckoo.Edge)
+	cycle := make(map[int]*cuckoo.Edge)
 	n := 0
 	edg := &cuckoo.Edge{uint64(us[0]), uint64(vs[0]) - cuckoo.HALFSIZE}
 	cycle[edg.HashCode()] = edg
 	for nu != 0 { // u's in even position; v's in odd
 		nu--
 		edg := &cuckoo.Edge{uint64(us[(nu+1)&^1]), uint64(us[nu|1]) - cuckoo.HALFSIZE}
-		cycle[edg.HashCode()] = edg
+		_, has:=cycle[edg.HashCode()]
+		if !has {
+			cycle[edg.HashCode()] = edg
+		}
 	}
 	for nv != 0 { // u's in odd position; v's in even
 		nv--
 		edg := &cuckoo.Edge{uint64(vs[nv|1]), uint64(vs[(nv+1)&^1]) - cuckoo.HALFSIZE}
-		cycle[edg.HashCode()] = edg
+		_, has:=cycle[edg.HashCode()]
+		if !has {
+			cycle[edg.HashCode()] = edg
+		}
 	}
 	n = 0
 	for nonce := 0; nonce < self.easiness; nonce++ {
@@ -116,9 +119,10 @@ func (self *CuckooSolve) solution(us []int, nu int, vs []int, nv int) {
 	}
 }
 
-func contains(m map[uint64]*cuckoo.Edge, e *cuckoo.Edge) (bool, uint64) {
+func contains(m map[int]*cuckoo.Edge, e *cuckoo.Edge) (bool, int) {
+	h := e.HashCode()
 	for k, v := range m {
-		if v.U == v.U && v.V == e.V {
+		if k == h && v.U == e.U && v.V == e.V { //fuck Java for making me waste time just to figure out that that's how Java does contains
 			return true, k
 		}
 	}

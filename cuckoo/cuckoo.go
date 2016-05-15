@@ -23,7 +23,6 @@ THE SOFTWARE.
 package cuckoo
 
 import "crypto/sha256"
-import "fmt"
 
 const (
 	SIZESHIFT uint64 = 20
@@ -71,8 +70,8 @@ type Edge struct {
 	V uint64
 }
 
-func (self *Edge) HashCode() uint64 {
-	return self.U ^ self.V
+func (self *Edge) HashCode() int {
+	return int (self.U) ^ int(self.V)
 }
 
 func (self *Cuckoo) Sipedge(nonce uint64) *Edge {
@@ -177,7 +176,6 @@ func (self *Cuckoo) siphash24(nonce uint64) uint64 {
 	v1 ^= v2
 	v3 ^= v0
 	v2 = (v2 << 32) | v2>>32
-
 	return v0 ^ v1 ^ v2 ^ v3
 }
 
@@ -195,7 +193,6 @@ func (self *Cuckoo) Verify(nonces []uint64, easiness uint64) bool {
 
 	for n = 0; n < PROOFSIZE; n++ {
 		if nonces[n] >= easiness || (n != 0 && nonces[n] <= nonces[n-1]) {
-			fmt.Println(1)
 			return false
 		}
 		us[n] = self.Sipnode(nonces[n], 0)
@@ -208,33 +205,28 @@ func (self *Cuckoo) Verify(nonces []uint64, easiness uint64) bool {
 		for k := 0; uint64(k) < PROOFSIZE; k++ { // find unique other j with same vs[j]
 			if k != i && vs[k] == vs[i] {
 				if j != i {
-					fmt.Println(2)
 					return false
 				}
 				j = k
 			}
 		}
 		if j == i {
-			fmt.Println(3)
 			return false
 		}
 		i = j
 		for k := 0; uint64(k) < PROOFSIZE; k++ { // find unique other i with same us[i]
 			if k != j && us[k] == us[j] {
 				if i != j {
-					fmt.Println(4)
 					return false
 				}
 				i = k
 			}
 		}
 		if i == j {
-			fmt.Println(5)
 			return false
 		}
 		n -= 2
 		loop = (i != 0)
 	}
-	fmt.Println("n", n)
 	return n == 0
 }
