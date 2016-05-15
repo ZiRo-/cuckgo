@@ -52,7 +52,7 @@ func NewCuckooSolve(hdr []byte, en, ms, nt int) *CuckooSolve {
 		sols:     make([][]int, 2*ms), //this isn't completley safe for high easiness
 		cuckoo:   make([]int, 1+int(cuckoo.SIZE)),
 		nsols:    0,
-		nthreads: nt,
+		nthreads: 1,
 	}
 	for i := range self.sols {
 		self.sols[i] = make([]int, cuckoo.PROOFSIZE)
@@ -207,18 +207,38 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	solve := NewCuckooSolve(b, int(easipct*float64(cuckoo.SIZE)/100.0), maxsols, nthreads)
+	easy := int(easipct*float64(cuckoo.SIZE)/100.0)
+	solve := NewCuckooSolve(b, easy, maxsols, 1)
 
 	for k := 0; k < MAXLEN-RANDOFFS; k++ {
 		b = append(b, 0)
-		for i := 0; i < 256; i++ {
-			b[RANDOFFS+k] = byte(i)
-			solve = NewCuckooSolve(b, int(easipct*float64(cuckoo.SIZE)/100.0), maxsols, nthreads)
+		for i := 0; i < 256; i+=nthreads {
+			
+			cs := make([]chan int, nthreads)
+			solvers := make([]*CuckooSolve, nthreads)
+			for n := 0; n < nthreads; n++ {
+				cs[n] = make(chan int)
+			}
+			out := merge(cs...)
 
-			tryData(solve)
+			for n := 0; n < nthreads; n++ {
+				if i+n < 256 {
+					b[RANDOFFS+k] = byte(i+n)
+					solvers[n] = NewCuckooSolve(b, easy, maxsols, 1)
+					go worker(i, solvers[n], cs[n])
+				} else {
+					close(cs[n])
+				}
+			}
 
-			if solve.nsols > 0 {
-				goto done
+			<-out
+			
+			for n, s := range(solvers) {
+				if s.nsols > 0 {
+					b[RANDOFFS+k] = byte(i+n)
+					solve = s
+					goto done
+				}
 			}
 		}
 	}
@@ -255,20 +275,6 @@ func formatProof(solve *CuckooSolve, b []byte) cuckoo.CuckooJSON {
 	}
 
 	return cuckoo.CuckooJSON{m, sha[:], cycle}
-}
-
-func tryData(solve *CuckooSolve) {
-	cs := make([]chan int, nthreads)
-	for i := 0; i < nthreads; i++ {
-		cs[i] = make(chan int)
-	}
-	out := merge(cs...)
-
-	for i := 0; i < nthreads; i++ {
-		go worker(i, solve, cs[i])
-	}
-
-	<-out
 }
 
 func merge(cs ...chan int) chan int {
