@@ -23,3 +23,13 @@ Usage of miner:
 # Algorithm
 
 For details about the algorith, see: https://github.com/tromp/cuckoo
+
+# Benchmarks
+#### N = 100, Easiness = 55, Average time = 0.9 s, CPU = i5-4210U
+![N = 100, Easiness = 55, Average time = 0.9 s, CPU = i5-4210U] (https://raw.githubusercontent.com/ZiRo-/cuckgo/master/bench/bench_N_100_e_55_avg_0.9.png)
+
+#### N = 100, Easiness = 50, Average time = 2.3 s, CPU = i5-4210U
+![N = 100, Easiness = 50, Average time = 2.3 s, CPU = i5-4210U] (https://raw.githubusercontent.com/ZiRo-/cuckgo/master/bench/bench_N_100_e_50_avg_2.3.png)
+
+#### N = 300, Easiness = 46, Average time = 56.2 s, CPU = i5-4210U
+![N = 300, Easiness = 46, Average time = 56.2 s, CPU = i5-4210U] (https://raw.githubusercontent.com/ZiRo-/cuckgo/master/bench/bench_N_300_e_46_avg_56.2.png)
