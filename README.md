@@ -33,3 +33,9 @@ For details about the algorith, see: https://github.com/tromp/cuckoo
 
 #### N = 300, Easiness = 46, Average time = 56.2 s, CPU = i5-4210U
 ![N = 300, Easiness = 46, Average time = 56.2 s, CPU = i5-4210U] (https://raw.githubusercontent.com/ZiRo-/cuckgo/master/bench/bench_N_300_e_46_avg_56.2.png)
+
+# JavaScript version
+Using [GopherJS](https://github.com/gopherjs/gopherjs) the Go implementation can be transpiled to JavaScript,
+which is also included in this repo. This file currently exports one function:
+`cuckoo["mine_cuckoo"](easiness)`
+which returns the same base64 representation of a proof as the Go CLI miner.
