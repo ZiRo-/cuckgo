@@ -26,7 +26,6 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
-	"github.com/ZiRo-/cuckgo/cuckoo"
 	"github.com/gopherjs/gopherjs/js"
 )
 
@@ -35,7 +34,7 @@ const RANDOFFS = 64
 const MAXLEN = 1024
 
 type CuckooSolve struct {
-	graph    *cuckoo.Cuckoo
+	graph    *Cuckoo
 	easiness int
 	cuckoo   []int
 	sols     [][]int
@@ -45,15 +44,15 @@ type CuckooSolve struct {
 
 func NewCuckooSolve(hdr []byte, en, ms, nt int) *CuckooSolve {
 	self := &CuckooSolve{
-		graph:    cuckoo.NewCuckoo(hdr),
+		graph:    NewCuckoo(hdr),
 		easiness: en,
 		sols:     make([][]int, 2*ms), //this isn't completley safe for high easiness
-		cuckoo:   make([]int, 1+int(cuckoo.SIZE)),
+		cuckoo:   make([]int, 1+int(SIZE)),
 		nsols:    0,
 		nthreads: 1,
 	}
 	for i := range self.sols {
-		self.sols[i] = make([]int, cuckoo.PROOFSIZE)
+		self.sols[i] = make([]int, PROOFSIZE)
 	}
 	return self
 }
@@ -79,13 +78,13 @@ func (self *CuckooSolve) path(u int, us []int) int {
 }
 
 func (self *CuckooSolve) solution(us []int, nu int, vs []int, nv int) {
-	cycle := make(map[int]*cuckoo.Edge)
+	cycle := make(map[int]*Edge)
 	n := 0
-	edg := &cuckoo.Edge{uint64(us[0]), uint64(vs[0]) - cuckoo.HALFSIZE}
+	edg := &Edge{uint64(us[0]), uint64(vs[0]) - HALFSIZE}
 	cycle[edg.HashCode()] = edg
 	for nu != 0 { // u's in even position; v's in odd
 		nu--
-		edg := &cuckoo.Edge{uint64(us[(nu+1)&^1]), uint64(us[nu|1]) - cuckoo.HALFSIZE}
+		edg := &Edge{uint64(us[(nu+1)&^1]), uint64(us[nu|1]) - HALFSIZE}
 		_, has := cycle[edg.HashCode()]
 		if !has {
 			cycle[edg.HashCode()] = edg
@@ -93,7 +92,7 @@ func (self *CuckooSolve) solution(us []int, nu int, vs []int, nv int) {
 	}
 	for nv != 0 { // u's in odd position; v's in even
 		nv--
-		edg := &cuckoo.Edge{uint64(vs[nv|1]), uint64(vs[(nv+1)&^1]) - cuckoo.HALFSIZE}
+		edg := &Edge{uint64(vs[nv|1]), uint64(vs[(nv+1)&^1]) - HALFSIZE}
 		_, has := cycle[edg.HashCode()]
 		if !has {
 			cycle[edg.HashCode()] = edg
@@ -109,14 +108,14 @@ func (self *CuckooSolve) solution(us []int, nu int, vs []int, nv int) {
 			delete(cycle, key)
 		}
 	}
-	if uint64(n) == cuckoo.PROOFSIZE {
+	if uint64(n) == PROOFSIZE {
 		self.nsols++
 	} else {
 		//fmt.Println("Only recovered ", n, " nonces")
 	}
 }
 
-func contains(m map[int]*cuckoo.Edge, e *cuckoo.Edge) (bool, int) {
+func contains(m map[int]*Edge, e *Edge) (bool, int) {
 	h := e.HashCode()
 	for k, v := range m {
 		if k == h && v.U == e.U && v.V == e.V { //fuck Java for making me waste time just to figure out that that's how Java does contains
@@ -133,7 +132,7 @@ func worker(id int, solve *CuckooSolve) {
 	for nonce := id; nonce < solve.easiness; nonce += solve.nthreads {
 		us[0] = (int)(solve.graph.Sipnode(uint64(nonce), 0))
 		u := cuck[us[0]]
-		vs[0] = (int)(cuckoo.HALFSIZE + solve.graph.Sipnode(uint64(nonce), 1))
+		vs[0] = (int)(HALFSIZE + solve.graph.Sipnode(uint64(nonce), 1))
 		v := cuck[vs[0]]
 		if u == vs[0] || v == us[0] {
 			continue // ignore duplicate edges
@@ -160,7 +159,7 @@ func worker(id int, solve *CuckooSolve) {
 			}
 			length := nu + nv + 1
 			//fmt.Println(" " , length , "-cycle found at " , id , ":" , (int)(nonce*100/solve.easiness) , "%")
-			if uint64(length) == cuckoo.PROOFSIZE && solve.nsols < len(solve.sols) {
+			if uint64(length) == PROOFSIZE && solve.nsols < len(solve.sols) {
 				solve.solution(us, nu, vs, nv)
 			}
 			continue
@@ -189,7 +188,7 @@ func mine_cuckoo(easipct float64) string {
 	if err != nil {
 		panic(err)
 	}
-	easy := int(easipct * float64(cuckoo.SIZE) / 100.0)
+	easy := int(easipct * float64(SIZE) / 100.0)
 	solve := NewCuckooSolve(b, easy, maxsols, 1)
 
 	for k := 0; k < MAXLEN-RANDOFFS; k++ {
@@ -211,7 +210,7 @@ done:
 
 	if len(solve.sols) > 0 {
 		c := formatProof(solve, b)
-		json, _ := cuckoo.EncodeCuckooJSON(c)
+		json, _ := EncodeCuckooJSON(c)
 		str := base64.StdEncoding.EncodeToString(json)
 		return str
 	} else {
@@ -219,7 +218,7 @@ done:
 	}
 }
 
-func formatProof(solve *CuckooSolve, b []byte) cuckoo.CuckooJSON {
+func formatProof(solve *CuckooSolve, b []byte) CuckooJSON {
 	sha := sha256.Sum256(b)
 	easy := uint64(solve.easiness)
 	cycle := make([]uint64, len(solve.sols[0]))
@@ -230,7 +229,7 @@ func formatProof(solve *CuckooSolve, b []byte) cuckoo.CuckooJSON {
 		cycle[i] = uint64(n)
 	}
 
-	return cuckoo.CuckooJSON{m, sha[:], cycle}
+	return CuckooJSON{m, sha[:], cycle}
 }
 
 

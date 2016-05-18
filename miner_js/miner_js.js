@@ -27072,19 +27072,24 @@ $packages["encoding/json"] = (function() {
 	$pkg.$init = $init;
 	return $pkg;
 })();
-$packages["github.com/ZiRo-/cuckgo/cuckoo"] = (function() {
-	var $pkg = {}, $init, sha256, json, Cuckoo, Edge, CuckooJSON, arrayType, arrayType$1, sliceType, sliceType$1, ptrType$1, ptrType$2, mapType, u8, u8to64, NewCuckoo, NewCuckooSHA, EncodeCuckooJSON;
+$packages["github.com/ZiRo-/cuckgo/miner_js"] = (function() {
+	var $pkg = {}, $init, rand, sha256, base64, json, js, Cuckoo, Edge, CuckooSolve, CuckooJSON, arrayType, arrayType$1, sliceType, sliceType$1, ptrType, sliceType$2, sliceType$3, ptrType$1, funcType, mapType, ptrType$3, mapType$1, sh, u8, u8to64, NewCuckoo, NewCuckooSHA, siphash24_js, NewCuckooSolve, contains, worker, mine_cuckoo, formatProof, main, EncodeCuckooJSON;
+	rand = $packages["crypto/rand"];
 	sha256 = $packages["crypto/sha256"];
+	base64 = $packages["encoding/base64"];
 	json = $packages["encoding/json"];
-	Cuckoo = $pkg.Cuckoo = $newType(0, $kindStruct, "cuckoo.Cuckoo", "Cuckoo", "github.com/ZiRo-/cuckgo/cuckoo", function(v_) {
+	js = $packages["github.com/gopherjs/gopherjs/js"];
+	Cuckoo = $pkg.Cuckoo = $newType(0, $kindStruct, "main.Cuckoo", "Cuckoo", "github.com/ZiRo-/cuckgo/miner_js", function(v_, key_) {
 		this.$val = this;
 		if (arguments.length === 0) {
 			this.v = arrayType$1.zero();
+			this.key = sliceType.nil;
 			return;
 		}
 		this.v = v_;
+		this.key = key_;
 	});
-	Edge = $pkg.Edge = $newType(0, $kindStruct, "cuckoo.Edge", "Edge", "github.com/ZiRo-/cuckgo/cuckoo", function(U_, V_) {
+	Edge = $pkg.Edge = $newType(0, $kindStruct, "main.Edge", "Edge", "github.com/ZiRo-/cuckgo/miner_js", function(U_, V_) {
 		this.$val = this;
 		if (arguments.length === 0) {
 			this.U = new $Uint64(0, 0);
@@ -27094,12 +27099,30 @@ $packages["github.com/ZiRo-/cuckgo/cuckoo"] = (function() {
 		this.U = U_;
 		this.V = V_;
 	});
-	CuckooJSON = $pkg.CuckooJSON = $newType(0, $kindStruct, "cuckoo.CuckooJSON", "CuckooJSON", "github.com/ZiRo-/cuckgo/cuckoo", function(Parameter_, InputData_, Cycle_) {
+	CuckooSolve = $pkg.CuckooSolve = $newType(0, $kindStruct, "main.CuckooSolve", "CuckooSolve", "github.com/ZiRo-/cuckgo/miner_js", function(graph_, easiness_, cuckoo_, sols_, nsols_, nthreads_) {
+		this.$val = this;
+		if (arguments.length === 0) {
+			this.graph = ptrType.nil;
+			this.easiness = 0;
+			this.cuckoo = sliceType$2.nil;
+			this.sols = sliceType$3.nil;
+			this.nsols = 0;
+			this.nthreads = 0;
+			return;
+		}
+		this.graph = graph_;
+		this.easiness = easiness_;
+		this.cuckoo = cuckoo_;
+		this.sols = sols_;
+		this.nsols = nsols_;
+		this.nthreads = nthreads_;
+	});
+	CuckooJSON = $pkg.CuckooJSON = $newType(0, $kindStruct, "main.CuckooJSON", "CuckooJSON", "github.com/ZiRo-/cuckgo/miner_js", function(Parameter_, InputData_, Cycle_) {
 		this.$val = this;
 		if (arguments.length === 0) {
 			this.Parameter = false;
-			this.InputData = sliceType$1.nil;
-			this.Cycle = sliceType.nil;
+			this.InputData = sliceType.nil;
+			this.Cycle = sliceType$1.nil;
 			return;
 		}
 		this.Parameter = Parameter_;
@@ -27108,11 +27131,16 @@ $packages["github.com/ZiRo-/cuckgo/cuckoo"] = (function() {
 	});
 	arrayType = $arrayType($Uint8, 32);
 	arrayType$1 = $arrayType($Uint64, 4);
-	sliceType = $sliceType($Uint64);
-	sliceType$1 = $sliceType($Uint8);
+	sliceType = $sliceType($Uint8);
+	sliceType$1 = $sliceType($Uint64);
+	ptrType = $ptrType(Cuckoo);
+	sliceType$2 = $sliceType($Int);
+	sliceType$3 = $sliceType(sliceType$2);
 	ptrType$1 = $ptrType(Edge);
-	ptrType$2 = $ptrType(Cuckoo);
-	mapType = $mapType($String, $Uint64);
+	funcType = $funcType([$Float64], [$String], false);
+	mapType = $mapType($String, $emptyInterface);
+	ptrType$3 = $ptrType(CuckooSolve);
+	mapType$1 = $mapType($String, $Uint64);
 	u8 = function(b) {
 		var $ptr, b, x;
 		return (x = new $Uint64(0, b), new $Uint64(x.$high & 0, (x.$low & 255) >>> 0));
@@ -27131,13 +27159,14 @@ $packages["github.com/ZiRo-/cuckgo/cuckoo"] = (function() {
 	NewCuckooSHA = function(hdrkey) {
 		var $ptr, hdrkey, k0, k1, self;
 		hdrkey = $clone(hdrkey, arrayType);
-		self = new Cuckoo.ptr(arrayType$1.zero());
+		self = new Cuckoo.ptr(arrayType$1.zero(), sliceType.nil);
 		k0 = u8to64(hdrkey, 0);
 		k1 = u8to64(hdrkey, 8);
 		self.v[0] = new $Uint64(k0.$high ^ 1936682341, (k0.$low ^ 1886610805) >>> 0);
 		self.v[1] = new $Uint64(k1.$high ^ 1685025377, (k1.$low ^ 1852075885) >>> 0);
 		self.v[2] = new $Uint64(k0.$high ^ 1819895653, (k0.$low ^ 1852142177) >>> 0);
 		self.v[3] = new $Uint64(k1.$high ^ 1952801890, (k1.$low ^ 2037671283) >>> 0);
+		self.key = new sliceType(hdrkey);
 		return self;
 	};
 	$pkg.NewCuckooSHA = NewCuckooSHA;
@@ -27154,101 +27183,18 @@ $packages["github.com/ZiRo-/cuckgo/cuckoo"] = (function() {
 	};
 	Cuckoo.prototype.Sipedge = function(nonce) { return this.$val.Sipedge(nonce); };
 	Cuckoo.ptr.prototype.siphash24 = function(nonce) {
-		var $ptr, nonce, self, v0, v1, v2, v3, x, x$1, x$10, x$100, x$101, x$102, x$103, x$104, x$105, x$106, x$107, x$108, x$109, x$11, x$110, x$111, x$112, x$113, x$114, x$115, x$116, x$117, x$118, x$119, x$12, x$120, x$121, x$122, x$123, x$124, x$13, x$14, x$15, x$16, x$17, x$18, x$19, x$2, x$20, x$21, x$22, x$23, x$24, x$25, x$26, x$27, x$28, x$29, x$3, x$30, x$31, x$32, x$33, x$34, x$35, x$36, x$37, x$38, x$39, x$4, x$40, x$41, x$42, x$43, x$44, x$45, x$46, x$47, x$48, x$49, x$5, x$50, x$51, x$52, x$53, x$54, x$55, x$56, x$57, x$58, x$59, x$6, x$60, x$61, x$62, x$63, x$64, x$65, x$66, x$67, x$68, x$69, x$7, x$70, x$71, x$72, x$73, x$74, x$75, x$76, x$77, x$78, x$79, x$8, x$80, x$81, x$82, x$83, x$84, x$85, x$86, x$87, x$88, x$89, x$9, x$90, x$91, x$92, x$93, x$94, x$95, x$96, x$97, x$98, x$99;
+		var $ptr, nonce, self;
 		self = this;
-		v0 = self.v[0];
-		v1 = self.v[1];
-		v2 = self.v[2];
-		v3 = (x = self.v[3], new $Uint64(x.$high ^ nonce.$high, (x.$low ^ nonce.$low) >>> 0));
-		v0 = (x$1 = v1, new $Uint64(v0.$high + x$1.$high, v0.$low + x$1.$low));
-		v2 = (x$2 = v3, new $Uint64(v2.$high + x$2.$high, v2.$low + x$2.$low));
-		v1 = (x$3 = $shiftLeft64(v1, 13), x$4 = $shiftRightUint64(v1, 51), new $Uint64(x$3.$high | x$4.$high, (x$3.$low | x$4.$low) >>> 0));
-		v3 = (x$5 = $shiftLeft64(v3, 16), x$6 = $shiftRightUint64(v3, 48), new $Uint64(x$5.$high | x$6.$high, (x$5.$low | x$6.$low) >>> 0));
-		v1 = (x$7 = v0, new $Uint64(v1.$high ^ x$7.$high, (v1.$low ^ x$7.$low) >>> 0));
-		v3 = (x$8 = v2, new $Uint64(v3.$high ^ x$8.$high, (v3.$low ^ x$8.$low) >>> 0));
-		v0 = (x$9 = $shiftLeft64(v0, 32), x$10 = $shiftRightUint64(v0, 32), new $Uint64(x$9.$high | x$10.$high, (x$9.$low | x$10.$low) >>> 0));
-		v2 = (x$11 = v1, new $Uint64(v2.$high + x$11.$high, v2.$low + x$11.$low));
-		v0 = (x$12 = v3, new $Uint64(v0.$high + x$12.$high, v0.$low + x$12.$low));
-		v1 = (x$13 = $shiftLeft64(v1, 17), x$14 = $shiftRightUint64(v1, 47), new $Uint64(x$13.$high | x$14.$high, (x$13.$low | x$14.$low) >>> 0));
-		v3 = (x$15 = $shiftLeft64(v3, 21), x$16 = $shiftRightUint64(v3, 43), new $Uint64(x$15.$high | x$16.$high, (x$15.$low | x$16.$low) >>> 0));
-		v1 = (x$17 = v2, new $Uint64(v1.$high ^ x$17.$high, (v1.$low ^ x$17.$low) >>> 0));
-		v3 = (x$18 = v0, new $Uint64(v3.$high ^ x$18.$high, (v3.$low ^ x$18.$low) >>> 0));
-		v2 = (x$19 = $shiftLeft64(v2, 32), x$20 = $shiftRightUint64(v2, 32), new $Uint64(x$19.$high | x$20.$high, (x$19.$low | x$20.$low) >>> 0));
-		v0 = (x$21 = v1, new $Uint64(v0.$high + x$21.$high, v0.$low + x$21.$low));
-		v2 = (x$22 = v3, new $Uint64(v2.$high + x$22.$high, v2.$low + x$22.$low));
-		v1 = (x$23 = $shiftLeft64(v1, 13), x$24 = $shiftRightUint64(v1, 51), new $Uint64(x$23.$high | x$24.$high, (x$23.$low | x$24.$low) >>> 0));
-		v3 = (x$25 = $shiftLeft64(v3, 16), x$26 = $shiftRightUint64(v3, 48), new $Uint64(x$25.$high | x$26.$high, (x$25.$low | x$26.$low) >>> 0));
-		v1 = (x$27 = v0, new $Uint64(v1.$high ^ x$27.$high, (v1.$low ^ x$27.$low) >>> 0));
-		v3 = (x$28 = v2, new $Uint64(v3.$high ^ x$28.$high, (v3.$low ^ x$28.$low) >>> 0));
-		v0 = (x$29 = $shiftLeft64(v0, 32), x$30 = $shiftRightUint64(v0, 32), new $Uint64(x$29.$high | x$30.$high, (x$29.$low | x$30.$low) >>> 0));
-		v2 = (x$31 = v1, new $Uint64(v2.$high + x$31.$high, v2.$low + x$31.$low));
-		v0 = (x$32 = v3, new $Uint64(v0.$high + x$32.$high, v0.$low + x$32.$low));
-		v1 = (x$33 = $shiftLeft64(v1, 17), x$34 = $shiftRightUint64(v1, 47), new $Uint64(x$33.$high | x$34.$high, (x$33.$low | x$34.$low) >>> 0));
-		v3 = (x$35 = $shiftLeft64(v3, 21), x$36 = $shiftRightUint64(v3, 43), new $Uint64(x$35.$high | x$36.$high, (x$35.$low | x$36.$low) >>> 0));
-		v1 = (x$37 = v2, new $Uint64(v1.$high ^ x$37.$high, (v1.$low ^ x$37.$low) >>> 0));
-		v3 = (x$38 = v0, new $Uint64(v3.$high ^ x$38.$high, (v3.$low ^ x$38.$low) >>> 0));
-		v2 = (x$39 = $shiftLeft64(v2, 32), x$40 = $shiftRightUint64(v2, 32), new $Uint64(x$39.$high | x$40.$high, (x$39.$low | x$40.$low) >>> 0));
-		v0 = (x$41 = nonce, new $Uint64(v0.$high ^ x$41.$high, (v0.$low ^ x$41.$low) >>> 0));
-		v2 = (x$42 = new $Uint64(0, 255), new $Uint64(v2.$high ^ x$42.$high, (v2.$low ^ x$42.$low) >>> 0));
-		v0 = (x$43 = v1, new $Uint64(v0.$high + x$43.$high, v0.$low + x$43.$low));
-		v2 = (x$44 = v3, new $Uint64(v2.$high + x$44.$high, v2.$low + x$44.$low));
-		v1 = (x$45 = $shiftLeft64(v1, 13), x$46 = $shiftRightUint64(v1, 51), new $Uint64(x$45.$high | x$46.$high, (x$45.$low | x$46.$low) >>> 0));
-		v3 = (x$47 = $shiftLeft64(v3, 16), x$48 = $shiftRightUint64(v3, 48), new $Uint64(x$47.$high | x$48.$high, (x$47.$low | x$48.$low) >>> 0));
-		v1 = (x$49 = v0, new $Uint64(v1.$high ^ x$49.$high, (v1.$low ^ x$49.$low) >>> 0));
-		v3 = (x$50 = v2, new $Uint64(v3.$high ^ x$50.$high, (v3.$low ^ x$50.$low) >>> 0));
-		v0 = (x$51 = $shiftLeft64(v0, 32), x$52 = $shiftRightUint64(v0, 32), new $Uint64(x$51.$high | x$52.$high, (x$51.$low | x$52.$low) >>> 0));
-		v2 = (x$53 = v1, new $Uint64(v2.$high + x$53.$high, v2.$low + x$53.$low));
-		v0 = (x$54 = v3, new $Uint64(v0.$high + x$54.$high, v0.$low + x$54.$low));
-		v1 = (x$55 = $shiftLeft64(v1, 17), x$56 = $shiftRightUint64(v1, 47), new $Uint64(x$55.$high | x$56.$high, (x$55.$low | x$56.$low) >>> 0));
-		v3 = (x$57 = $shiftLeft64(v3, 21), x$58 = $shiftRightUint64(v3, 43), new $Uint64(x$57.$high | x$58.$high, (x$57.$low | x$58.$low) >>> 0));
-		v1 = (x$59 = v2, new $Uint64(v1.$high ^ x$59.$high, (v1.$low ^ x$59.$low) >>> 0));
-		v3 = (x$60 = v0, new $Uint64(v3.$high ^ x$60.$high, (v3.$low ^ x$60.$low) >>> 0));
-		v2 = (x$61 = $shiftLeft64(v2, 32), x$62 = $shiftRightUint64(v2, 32), new $Uint64(x$61.$high | x$62.$high, (x$61.$low | x$62.$low) >>> 0));
-		v0 = (x$63 = v1, new $Uint64(v0.$high + x$63.$high, v0.$low + x$63.$low));
-		v2 = (x$64 = v3, new $Uint64(v2.$high + x$64.$high, v2.$low + x$64.$low));
-		v1 = (x$65 = $shiftLeft64(v1, 13), x$66 = $shiftRightUint64(v1, 51), new $Uint64(x$65.$high | x$66.$high, (x$65.$low | x$66.$low) >>> 0));
-		v3 = (x$67 = $shiftLeft64(v3, 16), x$68 = $shiftRightUint64(v3, 48), new $Uint64(x$67.$high | x$68.$high, (x$67.$low | x$68.$low) >>> 0));
-		v1 = (x$69 = v0, new $Uint64(v1.$high ^ x$69.$high, (v1.$low ^ x$69.$low) >>> 0));
-		v3 = (x$70 = v2, new $Uint64(v3.$high ^ x$70.$high, (v3.$low ^ x$70.$low) >>> 0));
-		v0 = (x$71 = $shiftLeft64(v0, 32), x$72 = $shiftRightUint64(v0, 32), new $Uint64(x$71.$high | x$72.$high, (x$71.$low | x$72.$low) >>> 0));
-		v2 = (x$73 = v1, new $Uint64(v2.$high + x$73.$high, v2.$low + x$73.$low));
-		v0 = (x$74 = v3, new $Uint64(v0.$high + x$74.$high, v0.$low + x$74.$low));
-		v1 = (x$75 = $shiftLeft64(v1, 17), x$76 = $shiftRightUint64(v1, 47), new $Uint64(x$75.$high | x$76.$high, (x$75.$low | x$76.$low) >>> 0));
-		v3 = (x$77 = $shiftLeft64(v3, 21), x$78 = $shiftRightUint64(v3, 43), new $Uint64(x$77.$high | x$78.$high, (x$77.$low | x$78.$low) >>> 0));
-		v1 = (x$79 = v2, new $Uint64(v1.$high ^ x$79.$high, (v1.$low ^ x$79.$low) >>> 0));
-		v3 = (x$80 = v0, new $Uint64(v3.$high ^ x$80.$high, (v3.$low ^ x$80.$low) >>> 0));
-		v2 = (x$81 = $shiftLeft64(v2, 32), x$82 = $shiftRightUint64(v2, 32), new $Uint64(x$81.$high | x$82.$high, (x$81.$low | x$82.$low) >>> 0));
-		v0 = (x$83 = v1, new $Uint64(v0.$high + x$83.$high, v0.$low + x$83.$low));
-		v2 = (x$84 = v3, new $Uint64(v2.$high + x$84.$high, v2.$low + x$84.$low));
-		v1 = (x$85 = $shiftLeft64(v1, 13), x$86 = $shiftRightUint64(v1, 51), new $Uint64(x$85.$high | x$86.$high, (x$85.$low | x$86.$low) >>> 0));
-		v3 = (x$87 = $shiftLeft64(v3, 16), x$88 = $shiftRightUint64(v3, 48), new $Uint64(x$87.$high | x$88.$high, (x$87.$low | x$88.$low) >>> 0));
-		v1 = (x$89 = v0, new $Uint64(v1.$high ^ x$89.$high, (v1.$low ^ x$89.$low) >>> 0));
-		v3 = (x$90 = v2, new $Uint64(v3.$high ^ x$90.$high, (v3.$low ^ x$90.$low) >>> 0));
-		v0 = (x$91 = $shiftLeft64(v0, 32), x$92 = $shiftRightUint64(v0, 32), new $Uint64(x$91.$high | x$92.$high, (x$91.$low | x$92.$low) >>> 0));
-		v2 = (x$93 = v1, new $Uint64(v2.$high + x$93.$high, v2.$low + x$93.$low));
-		v0 = (x$94 = v3, new $Uint64(v0.$high + x$94.$high, v0.$low + x$94.$low));
-		v1 = (x$95 = $shiftLeft64(v1, 17), x$96 = $shiftRightUint64(v1, 47), new $Uint64(x$95.$high | x$96.$high, (x$95.$low | x$96.$low) >>> 0));
-		v3 = (x$97 = $shiftLeft64(v3, 21), x$98 = $shiftRightUint64(v3, 43), new $Uint64(x$97.$high | x$98.$high, (x$97.$low | x$98.$low) >>> 0));
-		v1 = (x$99 = v2, new $Uint64(v1.$high ^ x$99.$high, (v1.$low ^ x$99.$low) >>> 0));
-		v3 = (x$100 = v0, new $Uint64(v3.$high ^ x$100.$high, (v3.$low ^ x$100.$low) >>> 0));
-		v2 = (x$101 = $shiftLeft64(v2, 32), x$102 = $shiftRightUint64(v2, 32), new $Uint64(x$101.$high | x$102.$high, (x$101.$low | x$102.$low) >>> 0));
-		v0 = (x$103 = v1, new $Uint64(v0.$high + x$103.$high, v0.$low + x$103.$low));
-		v2 = (x$104 = v3, new $Uint64(v2.$high + x$104.$high, v2.$low + x$104.$low));
-		v1 = (x$105 = $shiftLeft64(v1, 13), x$106 = $shiftRightUint64(v1, 51), new $Uint64(x$105.$high | x$106.$high, (x$105.$low | x$106.$low) >>> 0));
-		v3 = (x$107 = $shiftLeft64(v3, 16), x$108 = $shiftRightUint64(v3, 48), new $Uint64(x$107.$high | x$108.$high, (x$107.$low | x$108.$low) >>> 0));
-		v1 = (x$109 = v0, new $Uint64(v1.$high ^ x$109.$high, (v1.$low ^ x$109.$low) >>> 0));
-		v3 = (x$110 = v2, new $Uint64(v3.$high ^ x$110.$high, (v3.$low ^ x$110.$low) >>> 0));
-		v0 = (x$111 = $shiftLeft64(v0, 32), x$112 = $shiftRightUint64(v0, 32), new $Uint64(x$111.$high | x$112.$high, (x$111.$low | x$112.$low) >>> 0));
-		v2 = (x$113 = v1, new $Uint64(v2.$high + x$113.$high, v2.$low + x$113.$low));
-		v0 = (x$114 = v3, new $Uint64(v0.$high + x$114.$high, v0.$low + x$114.$low));
-		v1 = (x$115 = $shiftLeft64(v1, 17), x$116 = $shiftRightUint64(v1, 47), new $Uint64(x$115.$high | x$116.$high, (x$115.$low | x$116.$low) >>> 0));
-		v3 = (x$117 = $shiftLeft64(v3, 21), x$118 = $shiftRightUint64(v3, 43), new $Uint64(x$117.$high | x$118.$high, (x$117.$low | x$118.$low) >>> 0));
-		v1 = (x$119 = v2, new $Uint64(v1.$high ^ x$119.$high, (v1.$low ^ x$119.$low) >>> 0));
-		v3 = (x$120 = v0, new $Uint64(v3.$high ^ x$120.$high, (v3.$low ^ x$120.$low) >>> 0));
-		v2 = (x$121 = $shiftLeft64(v2, 32), x$122 = $shiftRightUint64(v2, 32), new $Uint64(x$121.$high | x$122.$high, (x$121.$low | x$122.$low) >>> 0));
-		return (x$123 = (x$124 = new $Uint64(v0.$high ^ v1.$high, (v0.$low ^ v1.$low) >>> 0), new $Uint64(x$124.$high ^ v2.$high, (x$124.$low ^ v2.$low) >>> 0)), new $Uint64(x$123.$high ^ v3.$high, (x$123.$low ^ v3.$low) >>> 0));
+		return siphash24_js(self.key, nonce);
 	};
 	Cuckoo.prototype.siphash24 = function(nonce) { return this.$val.siphash24(nonce); };
+	siphash24_js = function(hdrkey, nonce) {
+		var $ptr, arr, hdrkey, high, low, nonce, x;
+		arr = sh.hash($externalize(hdrkey, sliceType), 0, $externalize(nonce, $Uint64));
+		high = $internalize(arr[0], $Uint64);
+		low = $internalize(arr[1], $Uint64);
+		return (x = $shiftLeft64(high, 32), new $Uint64(x.$high | low.$high, (x.$low | low.$low) >>> 0));
+	};
 	Cuckoo.ptr.prototype.Sipnode = function(nonce, uorv) {
 		var $ptr, nonce, self, uorv, x, x$1, x$2;
 		self = this;
@@ -27258,8 +27204,8 @@ $packages["github.com/ZiRo-/cuckgo/cuckoo"] = (function() {
 	Cuckoo.ptr.prototype.Verify = function(nonces, easiness) {
 		var $ptr, easiness, i, j, k, k$1, loop, n, nonces, self, us, vs, x, x$1, x$10, x$11, x$2, x$3, x$4, x$5, x$6, x$7, x$8, x$9;
 		self = this;
-		us = $makeSlice(sliceType, 42);
-		vs = $makeSlice(sliceType, 42);
+		us = $makeSlice(sliceType$1, 42);
+		vs = $makeSlice(sliceType$1, 42);
 		i = 0;
 		n = new $Uint64(0, 0);
 		n = new $Uint64(0, 0);
@@ -27311,75 +27257,15 @@ $packages["github.com/ZiRo-/cuckgo/cuckoo"] = (function() {
 		return (n.$high === 0 && n.$low === 0);
 	};
 	Cuckoo.prototype.Verify = function(nonces, easiness) { return this.$val.Verify(nonces, easiness); };
-	EncodeCuckooJSON = function(cuck) {
-		var $ptr, _r, cuck, $s, $r;
-		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; cuck = $f.cuck; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
-		cuck = $clone(cuck, CuckooJSON);
-		_r = json.Marshal(new cuck.constructor.elem(cuck)); /* */ $s = 1; case 1: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
-		/* */ $s = 2; case 2:
-		return _r;
-		/* */ } return; } if ($f === undefined) { $f = { $blk: EncodeCuckooJSON }; } $f.$ptr = $ptr; $f._r = _r; $f.cuck = cuck; $f.$s = $s; $f.$r = $r; return $f;
-	};
-	$pkg.EncodeCuckooJSON = EncodeCuckooJSON;
-	ptrType$2.methods = [{prop: "Sipedge", name: "Sipedge", pkg: "", typ: $funcType([$Uint64], [ptrType$1], false)}, {prop: "siphash24", name: "siphash24", pkg: "github.com/ZiRo-/cuckgo/cuckoo", typ: $funcType([$Uint64], [$Uint64], false)}, {prop: "Sipnode", name: "Sipnode", pkg: "", typ: $funcType([$Uint64, $Uint32], [$Uint64], false)}, {prop: "Verify", name: "Verify", pkg: "", typ: $funcType([sliceType, $Uint64], [$Bool], false)}];
-	ptrType$1.methods = [{prop: "HashCode", name: "HashCode", pkg: "", typ: $funcType([], [$Int], false)}];
-	Cuckoo.init([{prop: "v", name: "v", pkg: "github.com/ZiRo-/cuckgo/cuckoo", typ: arrayType$1, tag: ""}]);
-	Edge.init([{prop: "U", name: "U", pkg: "", typ: $Uint64, tag: ""}, {prop: "V", name: "V", pkg: "", typ: $Uint64, tag: ""}]);
-	CuckooJSON.init([{prop: "Parameter", name: "Parameter", pkg: "", typ: mapType, tag: "json:\"parameters\""}, {prop: "InputData", name: "InputData", pkg: "", typ: sliceType$1, tag: "json:\"header\""}, {prop: "Cycle", name: "Cycle", pkg: "", typ: sliceType, tag: "json:\"cycle\""}]);
-	$init = function() {
-		$pkg.$init = function() {};
-		/* */ var $f, $c = false, $s = 0, $r; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
-		$r = sha256.$init(); /* */ $s = 1; case 1: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
-		$r = json.$init(); /* */ $s = 2; case 2: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
-		/* */ } return; } if ($f === undefined) { $f = { $blk: $init }; } $f.$s = $s; $f.$r = $r; return $f;
-	};
-	$pkg.$init = $init;
-	return $pkg;
-})();
-$packages["main"] = (function() {
-	var $pkg = {}, $init, rand, sha256, base64, cuckoo, js, CuckooSolve, ptrType, sliceType, sliceType$1, ptrType$1, sliceType$2, arrayType, sliceType$3, funcType, mapType, ptrType$2, NewCuckooSolve, contains, worker, mine_cuckoo, formatProof, main;
-	rand = $packages["crypto/rand"];
-	sha256 = $packages["crypto/sha256"];
-	base64 = $packages["encoding/base64"];
-	cuckoo = $packages["github.com/ZiRo-/cuckgo/cuckoo"];
-	js = $packages["github.com/gopherjs/gopherjs/js"];
-	CuckooSolve = $pkg.CuckooSolve = $newType(0, $kindStruct, "main.CuckooSolve", "CuckooSolve", "main", function(graph_, easiness_, cuckoo_, sols_, nsols_, nthreads_) {
-		this.$val = this;
-		if (arguments.length === 0) {
-			this.graph = ptrType.nil;
-			this.easiness = 0;
-			this.cuckoo = sliceType.nil;
-			this.sols = sliceType$1.nil;
-			this.nsols = 0;
-			this.nthreads = 0;
-			return;
-		}
-		this.graph = graph_;
-		this.easiness = easiness_;
-		this.cuckoo = cuckoo_;
-		this.sols = sols_;
-		this.nsols = nsols_;
-		this.nthreads = nthreads_;
-	});
-	ptrType = $ptrType(cuckoo.Cuckoo);
-	sliceType = $sliceType($Int);
-	sliceType$1 = $sliceType(sliceType);
-	ptrType$1 = $ptrType(cuckoo.Edge);
-	sliceType$2 = $sliceType($Uint8);
-	arrayType = $arrayType($Uint8, 32);
-	sliceType$3 = $sliceType($Uint64);
-	funcType = $funcType([$Float64], [$String], false);
-	mapType = $mapType($String, $emptyInterface);
-	ptrType$2 = $ptrType(CuckooSolve);
 	NewCuckooSolve = function(hdr, en, ms, nt) {
 		var $ptr, _i, _ref, en, hdr, i, ms, nt, self, x;
-		self = new CuckooSolve.ptr(cuckoo.NewCuckoo(hdr), en, $makeSlice(sliceType, 1048577), $makeSlice(sliceType$1, ($imul(2, ms))), 0, 1);
+		self = new CuckooSolve.ptr(NewCuckoo(hdr), en, $makeSlice(sliceType$2, 1048577), $makeSlice(sliceType$3, ($imul(2, ms))), 0, 1);
 		_ref = self.sols;
 		_i = 0;
 		while (true) {
 			if (!(_i < _ref.$length)) { break; }
 			i = _i;
-			(x = self.sols, ((i < 0 || i >= x.$length) ? $throwRuntimeError("index out of range") : x.$array[x.$offset + i] = $makeSlice(sliceType, 42)));
+			(x = self.sols, ((i < 0 || i >= x.$length) ? $throwRuntimeError("index out of range") : x.$array[x.$offset + i] = $makeSlice(sliceType$2, 42)));
 			_i++;
 		}
 		return self;
@@ -27414,12 +27300,12 @@ $packages["main"] = (function() {
 		self = this;
 		cycle = {};
 		n = 0;
-		edg = new cuckoo.Edge.ptr(new $Uint64(0, (0 >= us.$length ? $throwRuntimeError("index out of range") : us.$array[us.$offset + 0])), (x = new $Uint64(0, (0 >= vs.$length ? $throwRuntimeError("index out of range") : vs.$array[vs.$offset + 0])), new $Uint64(x.$high - 0, x.$low - 524288)));
+		edg = new Edge.ptr(new $Uint64(0, (0 >= us.$length ? $throwRuntimeError("index out of range") : us.$array[us.$offset + 0])), (x = new $Uint64(0, (0 >= vs.$length ? $throwRuntimeError("index out of range") : vs.$array[vs.$offset + 0])), new $Uint64(x.$high - 0, x.$low - 524288)));
 		_key = edg.HashCode(); (cycle || $throwRuntimeError("assignment to entry in nil map"))[$Int.keyFor(_key)] = { k: _key, v: edg };
 		while (true) {
 			if (!(!((nu === 0)))) { break; }
 			nu = nu - (1) >> 0;
-			edg$1 = new cuckoo.Edge.ptr(new $Uint64(0, (x$1 = (((nu + 1 >> 0)) & ~1) >> 0, ((x$1 < 0 || x$1 >= us.$length) ? $throwRuntimeError("index out of range") : us.$array[us.$offset + x$1]))), (x$2 = new $Uint64(0, (x$3 = nu | 1, ((x$3 < 0 || x$3 >= us.$length) ? $throwRuntimeError("index out of range") : us.$array[us.$offset + x$3]))), new $Uint64(x$2.$high - 0, x$2.$low - 524288)));
+			edg$1 = new Edge.ptr(new $Uint64(0, (x$1 = (((nu + 1 >> 0)) & ~1) >> 0, ((x$1 < 0 || x$1 >= us.$length) ? $throwRuntimeError("index out of range") : us.$array[us.$offset + x$1]))), (x$2 = new $Uint64(0, (x$3 = nu | 1, ((x$3 < 0 || x$3 >= us.$length) ? $throwRuntimeError("index out of range") : us.$array[us.$offset + x$3]))), new $Uint64(x$2.$high - 0, x$2.$low - 524288)));
 			_tuple = (_entry = cycle[$Int.keyFor(edg$1.HashCode())], _entry !== undefined ? [_entry.v, true] : [ptrType$1.nil, false]);
 			has = _tuple[1];
 			if (!has) {
@@ -27429,7 +27315,7 @@ $packages["main"] = (function() {
 		while (true) {
 			if (!(!((nv === 0)))) { break; }
 			nv = nv - (1) >> 0;
-			edg$2 = new cuckoo.Edge.ptr(new $Uint64(0, (x$4 = nv | 1, ((x$4 < 0 || x$4 >= vs.$length) ? $throwRuntimeError("index out of range") : vs.$array[vs.$offset + x$4]))), (x$5 = new $Uint64(0, (x$6 = (((nv + 1 >> 0)) & ~1) >> 0, ((x$6 < 0 || x$6 >= vs.$length) ? $throwRuntimeError("index out of range") : vs.$array[vs.$offset + x$6]))), new $Uint64(x$5.$high - 0, x$5.$low - 524288)));
+			edg$2 = new Edge.ptr(new $Uint64(0, (x$4 = nv | 1, ((x$4 < 0 || x$4 >= vs.$length) ? $throwRuntimeError("index out of range") : vs.$array[vs.$offset + x$4]))), (x$5 = new $Uint64(0, (x$6 = (((nv + 1 >> 0)) & ~1) >> 0, ((x$6 < 0 || x$6 >= vs.$length) ? $throwRuntimeError("index out of range") : vs.$array[vs.$offset + x$6]))), new $Uint64(x$5.$high - 0, x$5.$low - 524288)));
 			_tuple$1 = (_entry$1 = cycle[$Int.keyFor(edg$2.HashCode())], _entry$1 !== undefined ? [_entry$1.v, true] : [ptrType$1.nil, false]);
 			has$1 = _tuple$1[1];
 			if (!has$1) {
@@ -27482,8 +27368,8 @@ $packages["main"] = (function() {
 	worker = function(id, solve) {
 		var $ptr, cuck, id, length, min, nonce, nu, nv, solve, u, us, v, vs, x, x$1, x$2, x$3, x$4, x$5, x$6, x$7, x$8, x$9;
 		cuck = solve.cuckoo;
-		us = $makeSlice(sliceType, 4096);
-		vs = $makeSlice(sliceType, 4096);
+		us = $makeSlice(sliceType$2, 4096);
+		vs = $makeSlice(sliceType$2, 4096);
 		nonce = id;
 		while (true) {
 			if (!(nonce < solve.easiness)) { break; }
@@ -27540,10 +27426,10 @@ $packages["main"] = (function() {
 		}
 	};
 	mine_cuckoo = function(easipct) {
-		var $ptr, _r, _r$1, _tuple, _tuple$1, b, c, easipct, easy, err, i, json, k, maxsols, solve, str, x, $s, $r;
-		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; _r$1 = $f._r$1; _tuple = $f._tuple; _tuple$1 = $f._tuple$1; b = $f.b; c = $f.c; easipct = $f.easipct; easy = $f.easy; err = $f.err; i = $f.i; json = $f.json; k = $f.k; maxsols = $f.maxsols; solve = $f.solve; str = $f.str; x = $f.x; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		var $ptr, _r, _r$1, _tuple, _tuple$1, b, c, easipct, easy, err, i, json$1, k, maxsols, solve, str, x, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; _r$1 = $f._r$1; _tuple = $f._tuple; _tuple$1 = $f._tuple$1; b = $f.b; c = $f.c; easipct = $f.easipct; easy = $f.easy; err = $f.err; i = $f.i; json$1 = $f.json$1; k = $f.k; maxsols = $f.maxsols; solve = $f.solve; str = $f.str; x = $f.x; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
 		maxsols = 8;
-		b = $makeSlice(sliceType$2, 64);
+		b = $makeSlice(sliceType, 64);
 		_r = rand.Read(b); /* */ $s = 1; case 1: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
 		_tuple = _r;
 		err = _tuple[1];
@@ -27575,22 +27461,22 @@ $packages["main"] = (function() {
 		/* */ if (solve.sols.$length > 0) { $s = 9; continue; }
 		/* */ $s = 10; continue;
 		/* if (solve.sols.$length > 0) { */ case 9:
-			c = $clone(formatProof(solve, b), cuckoo.CuckooJSON);
-			_r$1 = cuckoo.EncodeCuckooJSON(c); /* */ $s = 12; case 12: if($c) { $c = false; _r$1 = _r$1.$blk(); } if (_r$1 && _r$1.$blk !== undefined) { break s; }
+			c = $clone(formatProof(solve, b), CuckooJSON);
+			_r$1 = EncodeCuckooJSON(c); /* */ $s = 12; case 12: if($c) { $c = false; _r$1 = _r$1.$blk(); } if (_r$1 && _r$1.$blk !== undefined) { break s; }
 			_tuple$1 = _r$1;
-			json = _tuple$1[0];
-			str = base64.StdEncoding.EncodeToString(json);
+			json$1 = _tuple$1[0];
+			str = base64.StdEncoding.EncodeToString(json$1);
 			return str;
 		/* } else { */ case 10:
 			return "No Solution found.";
 		/* } */ case 11:
-		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: mine_cuckoo }; } $f.$ptr = $ptr; $f._r = _r; $f._r$1 = _r$1; $f._tuple = _tuple; $f._tuple$1 = _tuple$1; $f.b = b; $f.c = c; $f.easipct = easipct; $f.easy = easy; $f.err = err; $f.i = i; $f.json = json; $f.k = k; $f.maxsols = maxsols; $f.solve = solve; $f.str = str; $f.x = x; $f.$s = $s; $f.$r = $r; return $f;
+		/* */ $s = -1; case -1: } return; } if ($f === undefined) { $f = { $blk: mine_cuckoo }; } $f.$ptr = $ptr; $f._r = _r; $f._r$1 = _r$1; $f._tuple = _tuple; $f._tuple$1 = _tuple$1; $f.b = b; $f.c = c; $f.easipct = easipct; $f.easy = easy; $f.err = err; $f.i = i; $f.json$1 = json$1; $f.k = k; $f.maxsols = maxsols; $f.solve = solve; $f.str = str; $f.x = x; $f.$s = $s; $f.$r = $r; return $f;
 	};
 	formatProof = function(solve, b) {
 		var $ptr, _i, _key, _ref, b, cycle, easy, i, m, n, sha, solve, x, x$1;
 		sha = $clone(sha256.Sum256(b), arrayType);
 		easy = new $Uint64(0, solve.easiness);
-		cycle = $makeSlice(sliceType$3, (x = solve.sols, (0 >= x.$length ? $throwRuntimeError("index out of range") : x.$array[x.$offset + 0])).$length);
+		cycle = $makeSlice(sliceType$1, (x = solve.sols, (0 >= x.$length ? $throwRuntimeError("index out of range") : x.$array[x.$offset + 0])).$length);
 		m = {};
 		_key = "easiness"; (m || $throwRuntimeError("assignment to entry in nil map"))[$String.keyFor(_key)] = { k: _key, v: easy };
 		_ref = (x$1 = solve.sols, (0 >= x$1.$length ? $throwRuntimeError("index out of range") : x$1.$array[x$1.$offset + 0]));
@@ -27602,22 +27488,38 @@ $packages["main"] = (function() {
 			((i < 0 || i >= cycle.$length) ? $throwRuntimeError("index out of range") : cycle.$array[cycle.$offset + i] = new $Uint64(0, n));
 			_i++;
 		}
-		return new cuckoo.CuckooJSON.ptr(m, new sliceType$2(sha), cycle);
+		return new CuckooJSON.ptr(m, new sliceType(sha), cycle);
 	};
 	main = function() {
 		var $ptr;
 		$global.cuckoo = $externalize($makeMap($String.keyFor, [{ k: "mine_cuckoo", v: new funcType(mine_cuckoo) }]), mapType);
 	};
-	ptrType$2.methods = [{prop: "path", name: "path", pkg: "main", typ: $funcType([$Int, sliceType], [$Int], false)}, {prop: "solution", name: "solution", pkg: "main", typ: $funcType([sliceType, $Int, sliceType, $Int], [], false)}];
-	CuckooSolve.init([{prop: "graph", name: "graph", pkg: "main", typ: ptrType, tag: ""}, {prop: "easiness", name: "easiness", pkg: "main", typ: $Int, tag: ""}, {prop: "cuckoo", name: "cuckoo", pkg: "main", typ: sliceType, tag: ""}, {prop: "sols", name: "sols", pkg: "main", typ: sliceType$1, tag: ""}, {prop: "nsols", name: "nsols", pkg: "main", typ: $Int, tag: ""}, {prop: "nthreads", name: "nthreads", pkg: "main", typ: $Int, tag: ""}]);
+	EncodeCuckooJSON = function(cuck) {
+		var $ptr, _r, cuck, $s, $r;
+		/* */ $s = 0; var $f, $c = false; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $ptr = $f.$ptr; _r = $f._r; cuck = $f.cuck; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
+		cuck = $clone(cuck, CuckooJSON);
+		_r = json.Marshal(new cuck.constructor.elem(cuck)); /* */ $s = 1; case 1: if($c) { $c = false; _r = _r.$blk(); } if (_r && _r.$blk !== undefined) { break s; }
+		/* */ $s = 2; case 2:
+		return _r;
+		/* */ } return; } if ($f === undefined) { $f = { $blk: EncodeCuckooJSON }; } $f.$ptr = $ptr; $f._r = _r; $f.cuck = cuck; $f.$s = $s; $f.$r = $r; return $f;
+	};
+	$pkg.EncodeCuckooJSON = EncodeCuckooJSON;
+	ptrType.methods = [{prop: "Sipedge", name: "Sipedge", pkg: "", typ: $funcType([$Uint64], [ptrType$1], false)}, {prop: "siphash24", name: "siphash24", pkg: "github.com/ZiRo-/cuckgo/miner_js", typ: $funcType([$Uint64], [$Uint64], false)}, {prop: "Sipnode", name: "Sipnode", pkg: "", typ: $funcType([$Uint64, $Uint32], [$Uint64], false)}, {prop: "Verify", name: "Verify", pkg: "", typ: $funcType([sliceType$1, $Uint64], [$Bool], false)}];
+	ptrType$1.methods = [{prop: "HashCode", name: "HashCode", pkg: "", typ: $funcType([], [$Int], false)}];
+	ptrType$3.methods = [{prop: "path", name: "path", pkg: "github.com/ZiRo-/cuckgo/miner_js", typ: $funcType([$Int, sliceType$2], [$Int], false)}, {prop: "solution", name: "solution", pkg: "github.com/ZiRo-/cuckgo/miner_js", typ: $funcType([sliceType$2, $Int, sliceType$2, $Int], [], false)}];
+	Cuckoo.init([{prop: "v", name: "v", pkg: "github.com/ZiRo-/cuckgo/miner_js", typ: arrayType$1, tag: ""}, {prop: "key", name: "key", pkg: "github.com/ZiRo-/cuckgo/miner_js", typ: sliceType, tag: ""}]);
+	Edge.init([{prop: "U", name: "U", pkg: "", typ: $Uint64, tag: ""}, {prop: "V", name: "V", pkg: "", typ: $Uint64, tag: ""}]);
+	CuckooSolve.init([{prop: "graph", name: "graph", pkg: "github.com/ZiRo-/cuckgo/miner_js", typ: ptrType, tag: ""}, {prop: "easiness", name: "easiness", pkg: "github.com/ZiRo-/cuckgo/miner_js", typ: $Int, tag: ""}, {prop: "cuckoo", name: "cuckoo", pkg: "github.com/ZiRo-/cuckgo/miner_js", typ: sliceType$2, tag: ""}, {prop: "sols", name: "sols", pkg: "github.com/ZiRo-/cuckgo/miner_js", typ: sliceType$3, tag: ""}, {prop: "nsols", name: "nsols", pkg: "github.com/ZiRo-/cuckgo/miner_js", typ: $Int, tag: ""}, {prop: "nthreads", name: "nthreads", pkg: "github.com/ZiRo-/cuckgo/miner_js", typ: $Int, tag: ""}]);
+	CuckooJSON.init([{prop: "Parameter", name: "Parameter", pkg: "", typ: mapType$1, tag: "json:\"parameters\""}, {prop: "InputData", name: "InputData", pkg: "", typ: sliceType, tag: "json:\"header\""}, {prop: "Cycle", name: "Cycle", pkg: "", typ: sliceType$1, tag: "json:\"cycle\""}]);
 	$init = function() {
 		$pkg.$init = function() {};
 		/* */ var $f, $c = false, $s = 0, $r; if (this !== undefined && this.$blk !== undefined) { $f = this; $c = true; $s = $f.$s; $r = $f.$r; } s: while (true) { switch ($s) { case 0:
 		$r = rand.$init(); /* */ $s = 1; case 1: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
 		$r = sha256.$init(); /* */ $s = 2; case 2: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
 		$r = base64.$init(); /* */ $s = 3; case 3: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
-		$r = cuckoo.$init(); /* */ $s = 4; case 4: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		$r = json.$init(); /* */ $s = 4; case 4: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
 		$r = js.$init(); /* */ $s = 5; case 5: if($c) { $c = false; $r = $r.$blk(); } if ($r && $r.$blk !== undefined) { break s; }
+		sh = $global.require($externalize("./siphash-lib.js", $String));
 		if ($pkg === $mainPkg) {
 			main();
 			$mainFinished = true;
@@ -27628,10 +27530,10 @@ $packages["main"] = (function() {
 	return $pkg;
 })();
 $synthesizeMethods();
-var $mainPkg = $packages["main"];
+var $mainPkg = $packages["github.com/ZiRo-/cuckgo/miner_js"];
 $packages["runtime"].$init();
 $go($mainPkg.$init, [], true);
 $flushConsole();
 
 }).call(this);
-//# sourceMappingURL=miner-js.js.map
+//# sourceMappingURL=miner_js.js.map
