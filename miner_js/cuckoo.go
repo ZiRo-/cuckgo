@@ -85,7 +85,7 @@ func (self *Cuckoo) siphash24(nonce uint64) uint64 {
 	return siphash24_js(self.key, nonce)
 }
 
-var sh  *js.Object = js.Global.Call("require", "./siphash-lib.js")
+var sh  *js.Object = js.Global.Get("SipHash")
 
 func siphash24_js(hdrkey []byte, nonce uint64) uint64 {
 	arr := sh.Call("hash", hdrkey, 0, nonce)
