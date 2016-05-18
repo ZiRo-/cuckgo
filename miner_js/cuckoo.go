@@ -34,7 +34,9 @@ const (
 )
 
 type Cuckoo struct {
-	v [4]uint64
+	v   [4]uint64
+	vh  [4]uint32
+	vl  [4]uint32
 	key []byte
 }
 
@@ -64,6 +66,11 @@ func NewCuckooSHA(hdrkey [sha256.Size]byte) *Cuckoo {
 	self.v[2] = k0 ^ 0x6c7967656e657261
 	self.v[3] = k1 ^ 0x7465646279746573
 	self.key = hdrkey[:]
+	
+	for i,h := range(self.v) {
+		self.vl[i] = uint32 (h & 0xFFFFFFFF);
+		self.vh[i] = uint32((h & (0xFFFFFFFF << 32) ) >> 32);
+	}
 
 	return self
 }
@@ -82,13 +89,13 @@ func (self *Cuckoo) Sipedge(nonce uint64) *Edge {
 }
 
 func (self *Cuckoo) siphash24(nonce uint64) uint64 {
-	return siphash24_js(self.key, nonce)
+	return siphash24_js(self.vh, self.vl, nonce)
 }
 
 var sh  *js.Object = js.Global.Get("SipHash")
 
-func siphash24_js(hdrkey []byte, nonce uint64) uint64 {
-	arr := sh.Call("hash", hdrkey, 0, nonce)
+func siphash24_js(vh, vl [4]uint32, nonce uint64) uint64 {
+	arr := sh.Call("hash", vh[0], vl[0], vh[1], vl[1], vh[2], vl[2], vh[3], vl[3], 0, nonce)
 	high := arr.Index(0).Uint64();
 	low := arr.Index(1).Uint64();
 	
