@@ -76,7 +76,7 @@ func (self *CuckooSolve) path(u int, us []int) int {
 	return nu
 }
 
-func (self *CuckooSolve) solution(us []int, nu int, vs []int, nv int) {
+func (self *CuckooSolve) solution(us []int, nu int, vs []int, nv int) bool {
 	cycle := make(map[int]*Edge)
 	n := 0
 	edg := &Edge{uint64(us[0]), uint64(vs[0]) - HALFSIZE}
@@ -109,9 +109,11 @@ func (self *CuckooSolve) solution(us []int, nu int, vs []int, nv int) {
 	}
 	if uint64(n) == PROOFSIZE {
 		self.nsols++
+		return true
 	} else {
 		//fmt.Println("Only recovered ", n, " nonces")
 	}
+	return false
 }
 
 func contains(m map[int]*Edge, e *Edge) (bool, int) {
@@ -159,7 +161,9 @@ func worker(id int, solve *CuckooSolve) {
 			length := nu + nv + 1
 			//fmt.Println(" " , length , "-cycle found at " , id , ":" , (int)(nonce*100/solve.easiness) , "%")
 			if uint64(length) == PROOFSIZE && solve.nsols < len(solve.sols) {
-				solve.solution(us, nu, vs, nv)
+				if solve.solution(us, nu, vs, nv) {
+					break;
+				}
 			}
 			continue
 		}
