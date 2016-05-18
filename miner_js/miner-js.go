@@ -23,7 +23,6 @@ THE SOFTWARE.
 package main
 
 import (
-	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
 	"github.com/gopherjs/gopherjs/js"
@@ -180,42 +179,24 @@ func worker(id int, solve *CuckooSolve) {
 	}
 }
 
-func mine_cuckoo(easipct float64) string {
-	maxsols := 8
-
-	b := make([]byte, RANDOFFS)
-	_, err := rand.Read(b)
-	if err != nil {
-		panic(err)
-	}
+func mine_cuckoo(b []byte, easipct float64) []string {
 	easy := int(easipct * float64(SIZE) / 100.0)
-	solve := NewCuckooSolve(b, easy, maxsols, 1)
 
-	for k := 0; k < MAXLEN-RANDOFFS; k++ {
-		b = append(b, 0)
-		for i := 0; i < 256; i++ {
-
-
-			b[RANDOFFS+k] = byte(i)
-			solve = NewCuckooSolve(b, easy, maxsols, 1)
-			worker(i, solve)
-
-			if solve.nsols > 0 {
-				goto done
-			}
-		}
-	}
-
-done:
-
-	if len(solve.sols) > 0 {
+	solve := NewCuckooSolve(b, easy, 8, 1)
+	worker(0, solve)
+	
+	
+	res := make([]string, 2)
+	if solve.nsols > 0 {
 		c := formatProof(solve, b)
 		json, _ := EncodeCuckooJSON(c)
 		str := base64.StdEncoding.EncodeToString(json)
-		return str
+		res[0] = "ok"
+		res[1] = str
 	} else {
-		return "No Solution found."
+		res[0] = "D^:"
 	}
+	return res
 }
 
 func formatProof(solve *CuckooSolve, b []byte) CuckooJSON {
