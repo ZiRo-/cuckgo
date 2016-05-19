@@ -43,6 +43,11 @@ type CuckooSolve struct {
 	nthreads int
 }
 
+type CuckooProof struct {
+	solve *CuckooSolve
+	b     []byte
+}
+
 func NewCuckooSolve(hdr []byte, en, ms, nt int) *CuckooSolve {
 	self := &CuckooSolve{
 		graph:    cuckoo.NewCuckoo(hdr),
@@ -183,7 +188,7 @@ func worker(id int, solve *CuckooSolve, done chan int) {
 	close(done)
 }
 
-func Mine(easipct float64, maxsols, nthreads int) (*CuckooSolve, []byte) {
+func Mine(easipct float64, maxsols, nthreads int) *CuckooProof {
 	b := make([]byte, RANDOFFS)
 	_, err := rand.Read(b)
 	if err != nil {
@@ -233,14 +238,14 @@ done:
 		}
 		fmt.Println()
 	}*/
-	if solve.nsols > 0 {
-		return solve, b
+	if solve.nsols <= 0 {
+		solve = nil
 	}
-	return nil, b
+	return &CuckooProof{solve, b}
 }
 
-func (self *CuckooSolve)ToString(b []byte) string {
-	c := formatProof(self, b)
+func (self *CuckooProof)String() string {
+	c := formatProof(self.solve, self.b)
 	json, _ := cuckoo.EncodeCuckooJSON(c)
 	return base64.StdEncoding.EncodeToString(json)
 }

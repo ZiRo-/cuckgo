@@ -48,7 +48,7 @@ func main() {
 		nthreads = runtime.NumCPU()
 	}
 	//fmt.Println("Looking for", cuckoo.PROOFSIZE, "-cycle on cuckoo", cuckoo.SIZESHIFT, "with", easipct, "% edges and", nthreads, "threads")
-	c, b := miner_lib.Mine(easipct, maxsols, nthreads)
-	fmt.Println(c.ToString(b))
+	c := miner_lib.Mine(easipct, maxsols, nthreads)
+	fmt.Println(c.String())
 }
 
